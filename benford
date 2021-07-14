@@ -2,54 +2,81 @@
 import pandas as pd
 import math
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib as plt
 
 
+df = pd.read_csv("transactions.csv", 
+                 names=["TransactionNr", "Type", "Date", "Value", "PeriodNr", "Year", "u"])
+                    #Save csv in same folder as benford.py
 
-df = pd.read_csv("/Users/filiprm/Documents/Accountflow/transactions.csv", 
-       names=["TransactionNr", "Type", "Date", "Value", "PeriodNr", "Year", "u"])
-
-class Transactions:
     
-    def zeroCheckIB(self, data):
-        x = data.where(data.PeriodNr == 0).Value.sum()
-        return x
+def zero_check_ib(data):
+    x = data.where(data.PeriodNr == 0).Value.sum()
+    return x
     
-    def zeroCheckYear(self, data):
-        y = data.groupby(["Year"])["Value"].sum()
-        return y
+def zero_check_year(data):
+    y = data.groupby(["Year"])["Value"].sum()
+    return y
 
-    def extractFirsts(self, data):
-        data.Value = data.Value.astype(str).str.replace("-", "")
-        firsts = list(data.Value.str[0])
-        return firsts
+def extract_firsts(data):
+    temp_data = data.copy()
+    temp_data.Value = temp_data.Value.astype(str).str.replace("-", "")
+    firsts = list(temp_data.Value.str[0])
+    return firsts
     
-    def numbCounter(self, data):
-        numbers = []
-        percentages = []
-        for i in range(1,10):
-            numbers.append(self.extractFirsts(data).count(str(i)))
-            
-        for i in range(0, 9):
-            percentages.append(numbers[i]/sum(numbers))
+def act_dist(data):
+    numbers = act_obs(data)
+    percentages = []
+
+    for i in range(0, 9):
+        percentages.append(numbers[i]/sum(numbers))
+    return percentages
+
+def act_obs(data):
+    numbers = []
+    for i in range(1,10):
+        numbers.append(extract_firsts(data).count(str(i)))
+    return numbers
+
+def graph_plot(data):
+    percentages = act_dist(data)
+    expected = exp_dis()
         
-        return percentages
+    data_comparison = pd.DataFrame({"Expected": expected, "Actual": percentages}, index = range(1,10))
     
-    def graphPlot(self, data):
-        percentages = self.numbCounter(data)
-        expected = [math.log10(1+1/d) for d in range(1,10)]
-        
-        dataLists = pd.DataFrame({"Expected": expected, "Actual": percentages}, index = range(1,10))
-        dataLists.plot.bar()
+    data_comparison.plot.bar()
     
+    return data_comparison
+
+def exp_dis():
+    expected = [math.log10(1+1/d) for d in range(1,10)]
+    return expected
+    
+    
+def benford_test(data):
+    observed = act_obs(data)
+    expected = []
+    
+    for i in range(len(observed)):
+        expected.append(exp_dis()[i]*sum(observed))
+
+    chi_square_stat = 0; # chi-square test statistic
+    for data, expected in zip(observed, expected):
+        chi_square = math.pow(data - expected, 2)
+        chi_square_stat += chi_square / expected
+
+    return chi_square_stat < 15.51 #5% p-value confidence statistic
 
 
-tr = Transactions()    
-e = tr.zeroCheckIB(df)
-percentages = tr.numbCounter(df)
-g = tr.extractFirsts(df)
-n = tr.numbCounter(df)
-tr.graphPlot(df)
+#tests
+graph_plot(df)
+print(benford_test(df))
+x = zero_check_ib(df)
+y = zero_check_ib(df)
+f = extract_firsts(df)
+n = act_dist(df)
+o = act_obs(df)
+e = exp_dis()
 
 
 
