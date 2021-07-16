@@ -5,12 +5,6 @@ import numpy as np
 import matplotlib as plt
 from fastapi import FastAPI, File, UploadFile
 
-
-#df = pd.read_csv("transactions.csv", 
-                 #names=["TransactionNr", "Type", "Date", "Value", "PeriodNr", "Year", "u"])
-                    #Save csv in same folder as benford.py
-
-    
 def zero_check_ib(data):
     x = data.where(data.PeriodNr == 0).Value.sum()
     return x
