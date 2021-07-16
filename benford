@@ -3,10 +3,11 @@ import pandas as pd
 import math
 import numpy as np
 import matplotlib as plt
+from fastapi import FastAPI, File, UploadFile
 
 
-df = pd.read_csv("transactions.csv", 
-                 names=["TransactionNr", "Type", "Date", "Value", "PeriodNr", "Year", "u"])
+#df = pd.read_csv("transactions.csv", 
+                 #names=["TransactionNr", "Type", "Date", "Value", "PeriodNr", "Year", "u"])
                     #Save csv in same folder as benford.py
 
     
@@ -66,6 +67,20 @@ def benford_test(data):
         chi_square_stat += chi_square / expected
 
     return chi_square_stat < 15.51 #5% p-value confidence statistic
+        
+
+
+app = FastAPI()
+
+@app.post("/uploadcsv/")
+def upload_csv(csv_file: UploadFile = File(...)):
+    try:
+        dataframe = pd.read_csv(csv_file,
+                    names=["TransactionNr", "Type", "Date", "Value", "PeriodNr", "Year", "ID"])
+        return dataframe
+    except:
+        return False
+
 
 
 #tests
